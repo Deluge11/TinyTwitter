@@ -12,11 +12,11 @@ namespace ConsoleApp6
         public string MsgString { get;  set; }
         public DateTime Date { get;  set; }
 
-        public Msg(int uId,string msg)
+        public Msg(int uId,string msg,DateTime date)
         {
             UserId = uId;
             MsgString = msg;
-            Date = DateTime.Now;
+            Date = date;
         }
 
     }

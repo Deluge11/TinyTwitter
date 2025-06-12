@@ -602,7 +602,7 @@ void AddNewMassage(char[][] board, int ChatId)
 
     if (newMassage.Length >= 1 && newMassage.Length <= 60)
     {
-        Msg newMsg = new Msg(users[currentUsername].Id, newMassage);
+        Msg newMsg = new Msg(users[currentUsername].Id, newMassage,DateTime.Now);
         massages[ChatId].AddMsg(newMsg);
         Save();
     }
