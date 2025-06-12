@@ -21,6 +21,7 @@ LastIdInfo lastIdInfo = new();
 
 GetData();
 
+//ID
 string currentUsername = "";
 
 while (string.IsNullOrWhiteSpace(currentUsername))
@@ -132,28 +133,21 @@ void RegisterPage()
         Console.Write("| Enter the Password: ");
         string password = Console.ReadLine();
 
-        if (username.Length > 10 || username.Length < 3 || password.Length < 5) continue;
-
-
-        if (!users.ContainsKey(username))
+        if (username.Length > 10 || username.Length < 3 || password.Length < 5)
         {
-            currentUsername = username;
-
-            int newId = lastIdInfo.UserID++;
-            User newUser = new(newId, currentUsername, password);
-            users[currentUsername] = newUser;
+            Alert("Username or password is invalid");
+            continue;
         }
-        else
+
+        if (users.ContainsKey(username))
         {
-            Console.Clear();
-            Console.WriteLine("| Username exists!");
-            Console.WriteLine("| Press 1 to Continue");
-
-            if (Console.ReadKey().KeyChar != '1')
-            {
-                break;
-            }
+            Alert("Username already exists");
         }
+
+        currentUsername = username;
+        int newId = lastIdInfo.UserID++;
+        User newUser = new(newId, currentUsername, password);
+        users[currentUsername] = newUser;
 
     }
 }
@@ -267,15 +261,7 @@ void FriendsPage()
         switch (Console.ReadKey().KeyChar)
         {
             case '1':
-                switch (users[currentUsername].Friends.Count)
-                {
-                    case 0:
-                        PrintContents(["YOU HAVE NO FRIENDS !!"]);
-                        break;
-                    default:
-                        PrintContents(GetUserFriends());
-                        break;
-                }
+                PrintContents(GetUserFriends());
                 break;
             case '2':
                 SendFriendRequist();
@@ -294,9 +280,7 @@ void MassagesPage()
 
     if (contents.Count == 0)
     {
-        Console.Clear();
-        Console.WriteLine("| You have no friends to chat with ,poor guy :'(");
-        WaitMs();
+        Alert("You have no friends to chat with ,poor guy :'(");
         return;
     }
 
@@ -374,9 +358,7 @@ void NewPosts(List<Post> posts)
 
     if (posts.Count == 0)
     {
-        Console.Clear();
-        Console.WriteLine("| There is no new posts to show");
-        WaitMs();
+        Alert("There is no new posts to show");
         return;
     }
 
@@ -602,7 +584,7 @@ void AddNewMassage(char[][] board, int ChatId)
 
     if (newMassage.Length >= 1 && newMassage.Length <= 60)
     {
-        Msg newMsg = new Msg(users[currentUsername].Id, newMassage,DateTime.Now);
+        Msg newMsg = new Msg(users[currentUsername].Id, newMassage, DateTime.Now);
         massages[ChatId].AddMsg(newMsg);
         Save();
     }
@@ -821,8 +803,7 @@ void ApplyFriendRequsit()
             ConnectFriends(contents[curser]);
 
             Save();
-            Console.Clear();
-            Console.WriteLine($"| You and {contents[curser]} are friends now");
+            Alert($"You and ({contents[curser]}) are friends now");
             return;
         }
         else return;
@@ -1081,6 +1062,12 @@ void PrintBoardV1(int width, List<string> contents, int start = 0)
 }
 void PrintContents(List<string> contents)
 {
+    if (contents.Count == 0)
+    {
+        Alert("There is no result to show");
+        return;
+    }
+
     int start = 0;
     while (true)
     {
@@ -1116,4 +1103,10 @@ void WaitMs()
         Thread.Sleep(800);
     }
     Thread.Sleep(1500);
+}
+void Alert(string massage)
+{
+    Console.Clear();
+    Console.Write($"| {massage}");
+    WaitMs();
 }
