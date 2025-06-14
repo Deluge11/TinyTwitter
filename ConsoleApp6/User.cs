@@ -9,7 +9,7 @@ namespace ConsoleApp6
         public int Id { get; private set; }
         public string Name { get; private set; }
         public string Password { get; private set; }
-        public LinkedList<Post> Posts { get; private set; }
+        public LinkedList<int> PostsId { get; private set; }
         public HashSet<string> Friends { get; private set; }
         public HashSet<string> FriendRequists { get; private set; }
         public HashSet<int> ChatID { get; private set; }
@@ -19,15 +19,15 @@ namespace ConsoleApp6
             Id = id;
             Name = name;
             Password = password;
-            Posts = new();
+            PostsId = new();
             Friends = new();
             FriendRequists = new();
             ChatID = new();
         }
 
-        public void AddPost(Post post)
+        public void AddPost(int postId)
         {
-            Posts.AddFirst(post);
+            PostsId.AddFirst(postId);
         }
         public void AddFriendRequist(string username)
         {

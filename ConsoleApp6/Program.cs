@@ -2,19 +2,22 @@
 using ConsoleApp6;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
+using System.Security.Cryptography;
 
-int width = 60;
+int width = 75;
 int height = 26;
 char[][] board = new char[height][];
 
-SetBoardLines(board);
+SetBoardLines();
 
 
-string TestFile = "massage.json";
+string MassageFile = "massage.json";
 string UsersFile = "Users.json";
 string IdsFile = "LastId.json";
+string PostsFile = "Posts.json";
 
 Dictionary<string, User> users = new();
+Dictionary<int, Post> PostsDB = new();
 Dictionary<int, Massages> massages = new();
 LastIdInfo lastIdInfo = new();
 
@@ -58,7 +61,10 @@ void Save()
     File.WriteAllText(UsersFile, UsersJsonString);
 
     string MassagesJsonString = JsonConvert.SerializeObject(massages, Formatting.Indented);
-    File.WriteAllText(TestFile, MassagesJsonString);
+    File.WriteAllText(MassageFile, MassagesJsonString);
+
+    string PostsJsonString = JsonConvert.SerializeObject(PostsDB, Formatting.Indented);
+    File.WriteAllText(PostsFile, PostsJsonString);
 }
 void GetData()
 {
@@ -75,10 +81,15 @@ void GetData()
         json = File.ReadAllText(IdsFile);
         lastIdInfo = JsonConvert.DeserializeObject<LastIdInfo>(json) ?? new();
     }
-    if (File.Exists(TestFile))
+    if (File.Exists(MassageFile))
     {
-        json = File.ReadAllText(TestFile);
+        json = File.ReadAllText(MassageFile);
         massages = JsonConvert.DeserializeObject<Dictionary<int, Massages>>(json) ?? new();
+    }
+    if (File.Exists(PostsFile))
+    {
+        json = File.ReadAllText(PostsFile);
+        PostsDB = JsonConvert.DeserializeObject<Dictionary<int, Post>>(json) ?? new();
     }
 }
 
@@ -219,30 +230,53 @@ void ProfilePage()
 }
 void PostsPage()
 {
+    string[] Pages = { "My Posts", "Add new Post", "Check new Posts" };
+
+    int curser = 0;
+    int start = 0;
+
     while (true)
     {
-        Console.Clear();
-        Console.WriteLine("===========");
-        Console.WriteLine("1. My Posts");
-        Console.WriteLine("2. Add new Post");
-        Console.WriteLine("3. Check new Posts");
-        Console.WriteLine("===========");
-        Console.WriteLine("( Else to Back )");
+        SetBoardDefault();
 
-        switch (Console.ReadKey().KeyChar)
+
+        char[][] newBoard = SetBoardContents(g2: "#h{ Post Page }", g4: Pages[0], g7: Pages[1], g10: Pages[2]);
+
+        SetCurser(Pages[curser], curser - start + 1);
+        SetXLine(6, width - 1, 0);
+
+        PrintMatrix(newBoard);
+        Console.WriteLine("| Press to move");
+        Console.WriteLine("| W: Up , S: Down , X: Choose");
+        Console.WriteLine("| Else to back home");
+
+        var move = Console.ReadKey();
+
+        if (move.KeyChar == 'w')
         {
-            case '1':
-                PrintContents(GetUserPosts());
-                break;
-            case '2':
-                CreatePost();
-                break;
-            case '3':
-                NewPosts(GetNewPosts());
-                break;
-            default:
-                return;
+            if (curser > 0) curser--;
+
         }
+        else if (move.KeyChar == 's')
+        {
+            if (curser < Pages.Length - 1) curser++;
+        }
+        else if (move.KeyChar == 'x')
+        {
+            switch (curser)
+            {
+                case 0:
+                    PrintContents(GetUserPosts());
+                    break;
+                case 1:
+                    CreatePost();
+                    break;
+                case 2:
+                    NewPosts(GetNewPosts());
+                    break;
+            }
+        }
+        else return;
     }
 
 }
@@ -250,27 +284,53 @@ void FriendsPage()
 {
     while (true)
     {
-        Console.Clear();
-        Console.WriteLine("===========");
-        Console.WriteLine($"1. Your friends ({users[currentUsername].Friends.Count})");
-        Console.WriteLine("2. Add friends");
-        Console.WriteLine($"3. Apply friend requists ({users[currentUsername].FriendRequists.Count})");
-        Console.WriteLine("===========");
-        Console.WriteLine("( Else to Back )");
+        string[] Pages = { "My Friends", "Add Friends", "Apply Friend Requist" };
 
-        switch (Console.ReadKey().KeyChar)
+        int curser = 0;
+        int start = 0;
+
+        while (true)
         {
-            case '1':
-                PrintContents(GetUserFriends());
-                break;
-            case '2':
-                SendFriendRequist();
-                break;
-            case '3':
-                ApplyFriendRequsit();
-                break;
-            default:
-                return;
+            SetBoardDefault();
+
+
+            char[][] newBoard = SetBoardContents(g2: "#h{ Friend Page }", g4: Pages[0], g7: Pages[1], g10: Pages[2]);
+
+            SetCurser(Pages[curser], curser - start + 1);
+            SetXLine(6, width - 1, 0);
+
+            PrintMatrix(newBoard);
+            Console.WriteLine("| Press to move");
+            Console.WriteLine("| W: Up , S: Down , X: Choose");
+            Console.WriteLine("| Else to back home");
+
+            var move = Console.ReadKey();
+
+            if (move.KeyChar == 'w')
+            {
+                if (curser > 0) curser--;
+
+            }
+            else if (move.KeyChar == 's')
+            {
+                if (curser < Pages.Length - 1) curser++;
+            }
+            else if (move.KeyChar == 'x')
+            {
+                switch (curser)
+                {
+                    case 0:
+                        PrintContents(GetUserFriends());
+                        break;
+                    case 1:
+                        SendFriendRequist();
+                        break;
+                    case 2:
+                        ApplyFriendRequsit();
+                        break;
+                }
+            }
+            else return;
         }
     }
 }
@@ -284,27 +344,38 @@ void MassagesPage()
         return;
     }
 
-
-    string[] Names = { "", "", "", "" };
-
     int curser = 0;
     int start = 0;
-    int end = 3 >= contents.Count ? contents.Count - 1 : 3;
+
+    List<string> friendList = GetUserFriends();
+
 
     while (true)
     {
         SetBoardDefault();
 
-        for (int i = start, x = 0; i <= end; i++, x++)
+        string g4 = "";
+        string g7 = "";
+        string g10 = "";
+
+        if (friendList.Count - start >= 0)
         {
-            Names[x] = $"{i + 1}: {contents[i]}";
+            g4 = friendList[start + 0];
         }
-        char[][] newBoard = SetBoardContents(g1: Names[0], g4: Names[1], g7: Names[2], g10: Names[3]);
+        if (friendList.Count - start >= 1)
+        {
+            g7 = friendList[start + 1];
+        }
+        if (friendList.Count - start >= 2)
+        {
+            g10 = friendList[start + 2];
+        }
 
-        SetCurser($"{curser + 1}: {contents[curser]}", curser - start);
+        board = SetBoardContents(g2: "#h{ Friend Page }", g4: g4 , g7: g7, g10: g10);
+        SetCurser(contents[curser], curser - start + 1);
+        SetXLine(6, width - 1, 0);
+        PrintMatrix(board);
 
-
-        PrintMatrix(newBoard);
         Console.WriteLine("| Press to move");
         Console.WriteLine("| W: Up , S: Down , X: Choose");
         Console.WriteLine("| Else to back home");
@@ -315,27 +386,18 @@ void MassagesPage()
         {
             if (curser > 0) curser--;
 
-            if (curser < start)
-            {
-                start--;
-                end--;
-            }
+            if (curser < start) start--;
 
         }
         else if (move.KeyChar == 's')
         {
-            if (curser < contents.Count - 1) curser++;
+            if (curser < friendList.Count - 1) curser++;
 
-            if (curser > end)
-            {
-                start++;
-                end++;
-            }
+            if (start + 2 < curser) start++;
         }
         else if (move.KeyChar == 'x')
         {
             int cid = 0;
-
             foreach (int _cid in users[currentUsername].ChatID)
             {
                 if (users[contents[curser]].ChatID.Contains(_cid))
@@ -353,7 +415,7 @@ void MassagesPage()
 
 
 // Last Posts Page
-void NewPosts(List<Post> posts)
+void NewPosts(List<int> posts)
 {
 
     if (posts.Count == 0)
@@ -386,43 +448,48 @@ void NewPosts(List<Post> posts)
 
         if (start < length)
         {
-            string username = posts[start].PosterName == currentUsername ? "You" : posts[start].PosterName;
-            g1 = username;
-            g2 = $"{posts[start].PostMassage}#h{posts[start].Date.Year}/{posts[start].Date.Month}/{posts[start].Date.Day}#h{posts[start].Date.Hour}:{posts[start].Date.Minute}";
+            Post currPost = PostsDB[posts[start]];
+
+            g1 = currPost.PosterName == currentUsername ? "You" : currPost.PosterName;
+            g2 = $"{currPost.PostMassage}";
+            g3 = $"Like ({currPost.Likes.Count})#hPost in: {currPost.Date.Year}/{currPost.Date.Month}/{currPost.Date.Day}";
 
         }
         if (start + 1 < length)
         {
-            int current = start + 1;
+            Post currPost = PostsDB[posts[start + 1]];
 
-            string username = posts[current].PosterName == currentUsername ? "You" : posts[current].PosterName;
-            g4 = username;
-            g5 = $"{posts[current].PostMassage}#h{posts[current].Date.Year}/{posts[current].Date.Month}/{posts[current].Date.Day}#h{posts[current].Date.Hour}:{posts[current].Date.Minute}";
+            g4 = currPost.PosterName == currentUsername ? "You" : currPost.PosterName;
+            g5 = $"{currPost.PostMassage}";
+            g6 = $"Like ({currPost.Likes.Count})#hPost in: {currPost.Date.Year}/{currPost.Date.Month}/{currPost.Date.Day}";
         }
+
         if (start + 2 < length)
         {
-            int current = start + 2;
-            string username = posts[current].PosterName == currentUsername ? "You" : posts[current].PosterName;
-            g7 = username;
-            g8 = $"{posts[current].PostMassage}#h{posts[current].Date.Year}/{posts[current].Date.Month}/{posts[current].Date.Day}#h{posts[current].Date.Hour}:{posts[current].Date.Minute}";
+            Post currPost = PostsDB[posts[start + 2]];
+
+            g7 = currPost.PosterName == currentUsername ? "You" : currPost.PosterName;
+            g8 = $"{currPost.PostMassage}";
+            g9 = $"Like ({currPost.Likes.Count})#hPost in: {currPost.Date.Year}/{currPost.Date.Month}/{currPost.Date.Day}";
         }
         if (start + 3 < length)
         {
-            int current = start + 3;
-            string username = posts[current].PosterName == currentUsername ? "You" : posts[current].PosterName;
-            g10 = username;
-            g11 = $"{posts[current].PostMassage}#h{posts[current].Date.Year}/{posts[current].Date.Month}/{posts[current].Date.Day}#h{posts[current].Date.Hour}:{posts[current].Date.Minute}";
+            Post currPost = PostsDB[posts[start + 3]];
+
+            g10 = currPost.PosterName == currentUsername ? "You" : currPost.PosterName;
+            g11 = $"{currPost.PostMassage}";
+            g12 = $"Like ({currPost.Likes.Count})#hPost in: {currPost.Date.Year}/{currPost.Date.Month}/{currPost.Date.Day}";
         }
 
         char[][] newBoard = SetBoardContents(g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12);
 
-        string currentPoster = posts[curser].PosterName == currentUsername ? "You" : posts[curser].PosterName;
+        string currentPoster = PostsDB[posts[curser]].PosterName == currentUsername ? "You" : PostsDB[posts[curser]].PosterName;
 
         SetCurser(currentPoster, curser - start);
 
         PrintMatrix(newBoard);
         Console.WriteLine("| Press to move");
-        Console.WriteLine("| W: Up , S: Down");
+        Console.WriteLine("| W: Up , S: Down , X, Like");
         Console.WriteLine("| Else to back home");
         var move = Console.ReadKey();
 
@@ -439,35 +506,40 @@ void NewPosts(List<Post> posts)
 
             if (start + 3 < curser) start++;
         }
+        else if (move.KeyChar == 'x')
+        {
+            PostsDB[posts[curser]].Like(currentUsername);
+            Save();
+        }
         else return;
     }
 }
-List<Post> GetNewPosts()
+List<int> GetNewPosts()
 {
-    PriorityQueue<LinkedListNode<Post>, int> posts = new();
+    PriorityQueue<LinkedListNode<int>, int> posts = new();
 
-    var firstPost = users[currentUsername].Posts.First;
+    var firstPost = users[currentUsername].PostsId.First;
 
-    if (firstPost != null) posts.Enqueue(firstPost, -firstPost.Value.Id);
+    if (firstPost != null) posts.Enqueue(firstPost, -PostsDB[firstPost.Value].Id);
 
     foreach (var friend in users[currentUsername].Friends)
     {
-        firstPost = users[friend].Posts.First;
+        firstPost = users[friend].PostsId.First;
 
-        if (firstPost != null) posts.Enqueue(firstPost, -firstPost.Value.Id);
+        if (firstPost != null) posts.Enqueue(firstPost, -PostsDB[firstPost.Value].Id);
     }
 
-    List<Post> result = new();
+    List<int> result = new();
 
     while (posts.Count > 0 && result.Count < 10)
     {
         var post = posts.Dequeue();
 
-        result.Add(post.Value);
+        result.Add(PostsDB[post.Value].Id);
 
         post = post.Next;
 
-        if (post != null) posts.Enqueue(post, -post.Value.Id);
+        if (post != null) posts.Enqueue(post, -PostsDB[post.Value].Id);
     }
     return result;
 }
@@ -487,17 +559,12 @@ void CreatePost()
         WaitMs();
         return;
     }
-    if (post.Length > 40)
-    {
-        Console.Clear();
-        Console.WriteLine("| The post should have less than 40 letters");
-        WaitMs();
-        return;
-    }
+
     lastIdInfo.PostID++;
 
     Post newPost = new Post(lastIdInfo.PostID, post, currentUsername, DateTime.Now);
-    users[currentUsername].AddPost(newPost);
+    PostsDB[newPost.Id] = newPost;
+    users[currentUsername].AddPost(newPost.Id);
 
     Save();
     Console.WriteLine("| Post Added Successfully! ,Press any key to continue");
@@ -542,10 +609,11 @@ void FriendChat(int ChatId, string friendname)
         }
 
 
-        char[][] newBoard = SetBoardContents(g1: "You", g3: friendname, g4: g4, g6: g6, g7: g7, g9: g9, g10: g10, g12: g12);
-        SetXLine(newBoard, 4);
+        board = SetBoardContents(g1: "      You", g3: friendname, g4: g4, g6: g6, g7: g7, g9: g9, g10: g10, g12: g12);
+        SetXLine(4, width - 1);
+        SetYLine(width/2,height-1,4);
 
-        PrintMatrix(newBoard);
+        PrintMatrix(board);
         Console.WriteLine("| Press to move");
         Console.WriteLine("| W: Up , S: Down , X: Write new massage");
         Console.WriteLine("| Else to back home");
@@ -568,7 +636,7 @@ void FriendChat(int ChatId, string friendname)
         }
         else if (move.KeyChar == 'x')
         {
-            AddNewMassage(newBoard, ChatId);
+            AddNewMassage(board, ChatId);
             start = massages[ChatId].massagesList.Count - 1;
         }
         else return;
@@ -595,12 +663,9 @@ void AddNewMassage(char[][] board, int ChatId)
 List<string> GetUserPosts()
 {
     List<string> result = new();
-    foreach (var p in users[currentUsername].Posts)
+    foreach (var pId in users[currentUsername].PostsId)
     {
-        if (p.PosterName == currentUsername)
-        {
-            result.Add($"{p.PostMassage}    {p.Date.Year}/{p.Date.Month}/{p.Date.Day}");
-        }
+        result.Add($"{PostsDB[pId].PostMassage}    {PostsDB[pId].Date.Year}/{PostsDB[pId].Date.Month}/{PostsDB[pId].Date.Day}");
     }
 
     if (result.Count == 0)
@@ -655,7 +720,7 @@ List<string> ProfilePageContents()
     List<string> result = new();
     Console.Clear();
     result.Add($"| Name: {currentUsername}");
-    result.Add($"| Posts count: {users[currentUsername].Posts.Count}");
+    result.Add($"| Posts count: {users[currentUsername].PostsId.Count}");
     result.Add($"| Friends count: {users[currentUsername].Friends.Count}");
     return result;
 }
@@ -669,7 +734,7 @@ void SendFriendRequist()
     if (contents.Count == 0)
     {
         Console.Clear();
-        Console.WriteLine("| You have no users to show");
+        Console.WriteLine("| There is no users to show");
         WaitMs();
         return;
     }
@@ -742,7 +807,7 @@ void ApplyFriendRequsit()
     if (contents.Count == 0)
     {
         Console.Clear();
-        Console.WriteLine("| You have no requists to show");
+        Console.WriteLine("| There is no requists to show");
         WaitMs();
         return;
     }
@@ -863,34 +928,33 @@ string GetGrid(int w, int h, string g1, string g2, string g3, string g4, string 
     {
         case (5, 2):
             return g1;
-        case (25, 2):
+        case (28, 2):
             return g2;
-        case (38, 2):
+        case (51, 2):
             return g3;
         case (5, 8):
             return g4;
-        case (25, 8):
+        case (28, 8):
             return g5;
-        case (38, 8):
+        case (51, 8):
             return g6;
         case (5, 14):
             return g7;
-        case (25, 14):
+        case (28, 14):
             return g8;
-        case (38, 14):
+        case (51, 14):
             return g9;
         case (5, 20):
             return g10;
-        case (25, 20):
+        case (28, 20):
             return g11;
-        case (38, 20):
+        case (51, 20):
             return g12;
     }
     return "";
 }
 char[][] SetBoardContents(string g1 = "", string g2 = "", string g3 = "", string g4 = "", string g5 = "", string g6 = "", string g7 = "", string g8 = "", string g9 = "", string g10 = "", string g11 = "", string g12 = "")
 {
-
     string currentGrid = "";
     for (int h = 0; h < board.Length; h++)
     {
@@ -901,12 +965,20 @@ char[][] SetBoardContents(string g1 = "", string g2 = "", string g3 = "", string
             if (currentGrid == "") continue;
 
             int startW = w;
+            int startH = h;
 
-            int nextH = h;
             int nextW = w + 20;
 
             for (int x = 0; x < currentGrid.Length; x++, w++)
             {
+                if (h - startH == 5) continue;
+
+                if (h - startH == 4 && nextW - w == 4)
+                {
+                    currentGrid = "...";
+                    x = 0;
+                }
+
                 if (x < currentGrid.Length - 1 && currentGrid[x] == '#' && currentGrid[x + 1] == 'h')
                 {
                     h++;
@@ -927,7 +999,7 @@ char[][] SetBoardContents(string g1 = "", string g2 = "", string g3 = "", string
 
                 board[h][w] = currentGrid[x];
             }
-            h = nextH;
+            h = startH;
             w = nextW - 1;
 
             currentGrid = "";
@@ -956,11 +1028,11 @@ void SetCurser(string contents, int pos)
             break;
     }
 
-    board[h][3] = '>';
+    board[h][3] = '<';
 
-    int endContent = 6 + contents.Length > 20 ? 22 : 6 + contents.Length;
+    int endContent = 6 + contents.Length > 25 ? 26 : 6 + contents.Length;
 
-    board[h][endContent] = '<';
+    board[h][endContent] = '>';
 }
 void SetBoardDefault()
 {
@@ -968,42 +1040,43 @@ void SetBoardDefault()
     {
         for (int w = 0; w < width; w++)
         {
-            if (h == 0 || h == board.Length - 1)
-            {
-                if (w == 0 || w == width - 1)
-                {
-                    board[h][w] = '-';
-                }
-                else
-                {
-                    board[h][w] = '-';
-                }
-            }
-            else if (w == 0 || w == width - 1)
-            {
-                board[h][w] = '|';
-            }
-            else
-            {
-                board[h][w] = ' ';
-            }
+            board[h][w] = ' ';
         }
     }
 }
-void SetBoardLines(char[][] board)
+void SetBoardLines()
 {
-    int width = 60;
-
     for (int i = 0; i < board.Length; i++)
     {
         board[i] = new char[width];
     }
 }
-void SetXLine(char[][] board, int h)
+void SetXLine(int h, int length, int start = 0)
 {
-    for (int i = 1; i < board[h].Length - 1; i++)
+    for (int i = start; i < length; i++)
     {
-        board[h][i] = '-';
+        if (board[h][i] == '|')
+        {
+            board[h][i] = '*';
+        }
+        else
+        {
+            board[h][i] = '-';
+        }
+    }
+}
+void SetYLine(int w, int length, int start = 0)
+{
+    for (int i = start; i < length; i++)
+    {
+        if (board[i][w] == '-')
+        {
+            board[i][w] = '*';
+        }
+        else
+        {
+            board[i][w] = '|';
+        }
     }
 }
 
