@@ -802,9 +802,10 @@ void SendFriendRequist()
 }
 void ApplyFriendRequsit()
 {
-    List<string> contents = GetFriendRequistsUsers();
+    List<string> friendRequists = GetFriendRequistsUsers();
+    int length = friendRequists.Count - 1;
 
-    if (contents.Count == 0)
+    if (friendRequists.Count == 0)
     {
         Console.Clear();
         Console.WriteLine("| There is no requists to show");
@@ -812,27 +813,40 @@ void ApplyFriendRequsit()
         return;
     }
 
-
-    string[] Names = { "", "", "", "" };
-
     int curser = 0;
     int start = 0;
-    int end = 3 >= contents.Count ? contents.Count - 1 : 3;
+
 
     while (true)
     {
         SetBoardDefault();
 
-        for (int i = start, x = 0; i <= end; i++, x++)
+        string g1 = "";
+        string g4 = "";
+        string g7 = "";
+        string g10 = "";
+
+        if (length - start >= 0)
         {
-            Names[x] = $"{i + 1}: {contents[i]}";
+            g1 = friendRequists[start + 0];
         }
-        char[][] newBoard = SetBoardContents(g1: Names[0], g4: Names[1], g7: Names[2], g10: Names[3]);
+        if (length - start >= 1)
+        {
+            g4 = friendRequists[start + 1];
+        }
+        if (length - start >= 2)
+        {
+            g7 = friendRequists[start + 2];
+        }
+        if (length - start >= 3)
+        {
+            g10 = friendRequists[start + 3];
+        }
 
-        SetCurser($"{curser + 1}: {contents[curser]}", curser - start);
+        board = SetBoardContents(g1:g1, g4: g4, g7: g7, g10: g10);
+        SetCurser(friendRequists[curser], curser - start);
+        PrintMatrix(board);
 
-
-        PrintMatrix(newBoard);
         Console.WriteLine("| Press to move");
         Console.WriteLine("| W: Up , S: Down , X: Choose");
         Console.WriteLine("| Else to back home");
@@ -843,32 +857,24 @@ void ApplyFriendRequsit()
         {
             if (curser > 0) curser--;
 
-            if (curser < start)
-            {
-                start--;
-                end--;
-            }
+            if (curser < start) start--;
 
         }
         else if (move.KeyChar == 's')
         {
-            if (curser < contents.Count - 1) curser++;
+            if (curser < friendRequists.Count - 1) curser++;
 
-            if (curser > end)
-            {
-                start++;
-                end++;
-            }
+            if (start + 2 < curser) start++;
         }
         else if (move.KeyChar == 'x')
         {
-            users[currentUsername].RemoveFriendRequist(contents[curser]);
-            users[currentUsername].AddFriend(contents[curser]);
-            users[contents[curser]].AddFriend(currentUsername);
-            ConnectFriends(contents[curser]);
+            users[currentUsername].RemoveFriendRequist(friendRequists[curser]);
+            users[currentUsername].AddFriend(friendRequists[curser]);
+            users[friendRequists[curser]].AddFriend(currentUsername);
+            ConnectFriends(friendRequists[curser]);
 
             Save();
-            Alert($"You and ({contents[curser]}) are friends now");
+            Alert($"You and ({friendRequists[curser]}) are friends now");
             return;
         }
         else return;
