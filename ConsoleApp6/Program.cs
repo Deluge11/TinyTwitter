@@ -864,7 +864,7 @@ void ApplyFriendRequsit()
         {
             if (curser < friendRequists.Count - 1) curser++;
 
-            if (start + 2 < curser) start++;
+            if (start + 3 < curser) start++;
         }
         else if (move.KeyChar == 'x')
         {
