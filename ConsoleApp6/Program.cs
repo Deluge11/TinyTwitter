@@ -1,15 +1,12 @@
 ﻿
 using ConsoleApp6;
-using Microsoft.VisualBasic;
 using Newtonsoft.Json;
-using System.Security.Cryptography;
 
 int width = 75;
 int height = 26;
 char[][] board = new char[height][];
 
 SetBoardLines();
-
 
 string MassageFile = "massage.json";
 string UsersFile = "Users.json";
@@ -21,12 +18,21 @@ Dictionary<int, Post> PostsDB = new();
 Dictionary<int, Massages> massages = new();
 LastIdInfo lastIdInfo = new();
 
+int col1 = 5;
+int col2 = 28;
+int col3 = 51;
 
-GetData();
+int row1 = 2;
+int row2 = 8;
+int row3 = 14;
+int row4 = 20;
+
+
 
 //ID
 string currentUsername = "";
 
+GetData();
 while (string.IsNullOrWhiteSpace(currentUsername))
 {
     IndexPage();
@@ -46,7 +52,6 @@ while (string.IsNullOrWhiteSpace(currentUsername))
 
     Save();
 }
-WaitMs();
 HomePage();
 Save();
 
@@ -177,13 +182,15 @@ void HomePage()
         {
             SetBoardDefault();
 
-
-            char[][] newBoard = SetBoardContents(g1: Pages[0], g4: Pages[1], g7: Pages[2], g10: Pages[3]);
+            SetGrid(Pages[0], row1, col1);
+            SetGrid(Pages[1], row2, col1);
+            SetGrid(Pages[2], row3, col1);
+            SetGrid(Pages[3], row4, col1);
 
             SetCurser(Pages[curser], curser - start);
 
+            PrintMatrix();
 
-            PrintMatrix(newBoard);
             Console.WriteLine("| Press to move");
             Console.WriteLine("| W: Up , S: Down , X: Choose");
             Console.WriteLine("| Else to back home");
@@ -239,13 +246,16 @@ void PostsPage()
     {
         SetBoardDefault();
 
-
-        char[][] newBoard = SetBoardContents(g2: "#h{ Post Page }", g4: Pages[0], g7: Pages[1], g10: Pages[2]);
+        SetGrid("#h{ Post Page }", row1, col2);
+        SetGrid(Pages[0], row2, col1);
+        SetGrid(Pages[1], row3, col1);
+        SetGrid(Pages[2], row4, col1);
 
         SetCurser(Pages[curser], curser - start + 1);
+
         SetXLine(6, width - 1, 0);
 
-        PrintMatrix(newBoard);
+        PrintMatrix();
         Console.WriteLine("| Press to move");
         Console.WriteLine("| W: Up , S: Down , X: Choose");
         Console.WriteLine("| Else to back home");
@@ -293,13 +303,16 @@ void FriendsPage()
         {
             SetBoardDefault();
 
-
-            char[][] newBoard = SetBoardContents(g2: "#h{ Friend Page }", g4: Pages[0], g7: Pages[1], g10: Pages[2]);
+            SetGrid("#h{ Friend Page }", row1, col2);
+            SetGrid(Pages[0], row2, col1);
+            SetGrid(Pages[1], row3, col1);
+            SetGrid(Pages[2], row4, col1);
 
             SetCurser(Pages[curser], curser - start + 1);
+
             SetXLine(6, width - 1, 0);
 
-            PrintMatrix(newBoard);
+            PrintMatrix();
             Console.WriteLine("| Press to move");
             Console.WriteLine("| W: Up , S: Down , X: Choose");
             Console.WriteLine("| Else to back home");
@@ -371,10 +384,15 @@ void MassagesPage()
             g10 = friendList[start + 2];
         }
 
-        board = SetBoardContents(g2: "#h{ Friend Page }", g4: g4 , g7: g7, g10: g10);
+        SetGrid("#h{ Chat Page }", row1, col2);
+        SetGrid(g4, row2, col1);
+        SetGrid(g7, row3, col1);
+        SetGrid(g10, row4, col1);
+
         SetCurser(contents[curser], curser - start + 1);
+
         SetXLine(6, width - 1, 0);
-        PrintMatrix(board);
+        PrintMatrix();
 
         Console.WriteLine("| Press to move");
         Console.WriteLine("| W: Up , S: Down , X: Choose");
@@ -480,14 +498,24 @@ void NewPosts(List<int> posts)
             g11 = $"{currPost.PostMassage}";
             g12 = $"Like ({currPost.Likes.Count})#hPost in: {currPost.Date.Year}/{currPost.Date.Month}/{currPost.Date.Day}";
         }
-
-        char[][] newBoard = SetBoardContents(g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12);
+        SetGrid(g1,row1,col1);
+        SetGrid(g2,row1,col2);
+        SetGrid(g3,row1,col3);
+        SetGrid(g4,row2,col1);
+        SetGrid(g5,row2,col2);
+        SetGrid(g6,row2,col3);
+        SetGrid(g7,row3,col1);
+        SetGrid(g8,row3,col2);
+        SetGrid(g9,row3,col3);
+        SetGrid(g10,row4,col1);
+        SetGrid(g11,row4,col2);
+        SetGrid(g12,row4,col3);
 
         string currentPoster = PostsDB[posts[curser]].PosterName == currentUsername ? "You" : PostsDB[posts[curser]].PosterName;
 
         SetCurser(currentPoster, curser - start);
 
-        PrintMatrix(newBoard);
+        PrintMatrix();
         Console.WriteLine("| Press to move");
         Console.WriteLine("| W: Up , S: Down , X, Like");
         Console.WriteLine("| Else to back home");
@@ -608,12 +636,19 @@ void FriendChat(int ChatId, string friendname)
             g12 = massages[ChatId].massagesList[start].UserId == users[friendname].Id ? massages[ChatId].massagesList[start].MsgString : "";
         }
 
+        SetGrid("      You", row1, col1);
+        SetGrid(friendname, row1, col3);
+        SetGrid(g4, row2, col1);
+        SetGrid(g6, row2, col3);
+        SetGrid(g7, row3, col1);
+        SetGrid(g9, row3, col3);
+        SetGrid(g10, row4, col1);
+        SetGrid(g12, row4, col3);
 
-        board = SetBoardContents(g1: "      You", g3: friendname, g4: g4, g6: g6, g7: g7, g9: g9, g10: g10, g12: g12);
         SetXLine(4, width - 1);
-        SetYLine(width/2,height-1,4);
+        SetYLine(width / 2, height - 1, 4);
 
-        PrintMatrix(board);
+        PrintMatrix();
         Console.WriteLine("| Press to move");
         Console.WriteLine("| W: Up , S: Down , X: Write new massage");
         Console.WriteLine("| Else to back home");
@@ -636,18 +671,18 @@ void FriendChat(int ChatId, string friendname)
         }
         else if (move.KeyChar == 'x')
         {
-            AddNewMassage(board, ChatId);
+            AddNewMassage(ChatId);
             start = massages[ChatId].massagesList.Count - 1;
         }
         else return;
     }
 }
-void AddNewMassage(char[][] board, int ChatId)
+void AddNewMassage(int ChatId)
 {
     Console.Clear();
-    PrintMatrix(board);
-    Console.WriteLine("! Warning: text should be les than 60 letters !");
-    Console.Write("| Write the new massage: ");
+    PrintMatrix();
+    Console.WriteLine("| Write new massage ");
+    Console.Write(" => ");
     string newMassage = Console.ReadLine();
 
     if (newMassage.Length >= 1 && newMassage.Length <= 60)
@@ -729,9 +764,10 @@ List<string> ProfilePageContents()
 // Friend Set Tools 
 void SendFriendRequist()
 {
-    List<string> contents = GetUnfriendsUsers();
+    List<string> nonFriends = GetUnfriendsUsers();
+    int length = nonFriends.Count - 1;
 
-    if (contents.Count == 0)
+    if (nonFriends.Count == 0)
     {
         Console.Clear();
         Console.WriteLine("| There is no users to show");
@@ -740,56 +776,67 @@ void SendFriendRequist()
     }
 
 
-    string[] Names = { "", "", "", "" };
-
     int curser = 0;
     int start = 0;
-    int end = 3 >= contents.Count ? contents.Count - 1 : 3;
-
+  
     while (true)
     {
         SetBoardDefault();
 
-        for (int i = start, x = 0; i <= end; i++, x++)
+        string g1 = "";
+        string g4 = "";
+        string g7 = "";
+        string g10 = "";
+
+        if (length - start >= 0)
         {
-            Names[x] = $"{i + 1}: {contents[i]}";
+            g1 = nonFriends[start + 0];
         }
-        char[][] newBoard = SetBoardContents(g1: Names[0], g4: Names[1], g7: Names[2], g10: Names[3]);
+        if (length - start >= 1)
+        {
+            g4 = nonFriends[start + 1];
+        }
+        if (length - start >= 2)
+        {
+            g7 = nonFriends[start + 2];
+        }
+        if (length - start >= 3)
+        {
+            g10 = nonFriends[start + 3];
+        }
 
-        SetCurser($"{curser + 1}: {contents[curser]}", curser - start);
+        SetGrid(g1, row1, col1);
+        SetGrid(g4, row2, col1);
+        SetGrid(g7, row3, col1);
+        SetGrid(g10, row4, col1);
+
+        SetCurser(nonFriends[curser], curser - start);
 
 
-        PrintMatrix(newBoard);
+        PrintMatrix();
         Console.WriteLine("| Press to move");
         Console.WriteLine("| W: Up , S: Down , X: Choose");
         Console.WriteLine("| Else to back home");
 
         var move = Console.ReadKey();
 
+
         if (move.KeyChar == 'w')
         {
             if (curser > 0) curser--;
 
-            if (curser < start)
-            {
-                start--;
-                end--;
-            }
+            if (curser < start) start--;
 
         }
         else if (move.KeyChar == 's')
         {
-            if (curser < contents.Count - 1) curser++;
+            if (curser < nonFriends.Count - 1) curser++;
 
-            if (curser > end)
-            {
-                start++;
-                end++;
-            }
+            if (start + 3 < curser) start++;
         }
         else if (move.KeyChar == 'x')
         {
-            users[contents[curser]].AddFriendRequist(currentUsername);
+            users[nonFriends[curser]].AddFriendRequist(currentUsername);
             Save();
 
             Console.Clear();
@@ -843,9 +890,13 @@ void ApplyFriendRequsit()
             g10 = friendRequists[start + 3];
         }
 
-        board = SetBoardContents(g1:g1, g4: g4, g7: g7, g10: g10);
+        SetGrid(g1, row1, col1);
+        SetGrid(g4, row2, col1);
+        SetGrid(g7, row3, col1);
+        SetGrid(g10, row4, col1);
+
         SetCurser(friendRequists[curser], curser - start);
-        PrintMatrix(board);
+        PrintMatrix();
 
         Console.WriteLine("| Press to move");
         Console.WriteLine("| W: Up , S: Down , X: Choose");
@@ -894,7 +945,7 @@ void ConnectFriends(string FriendName)
 
 
 // Print Matrix
-void PrintMatrix(char[][] board)
+void PrintMatrix()
 {
     Console.Clear();
 
@@ -928,92 +979,6 @@ void PrintMatrix(char[][] board)
 
 
 // Set Matrix
-string GetGrid(int w, int h, string g1, string g2, string g3, string g4, string g5, string g6, string g7, string g8, string g9, string g10, string g11, string g12)
-{
-    switch ((w, h))
-    {
-        case (5, 2):
-            return g1;
-        case (28, 2):
-            return g2;
-        case (51, 2):
-            return g3;
-        case (5, 8):
-            return g4;
-        case (28, 8):
-            return g5;
-        case (51, 8):
-            return g6;
-        case (5, 14):
-            return g7;
-        case (28, 14):
-            return g8;
-        case (51, 14):
-            return g9;
-        case (5, 20):
-            return g10;
-        case (28, 20):
-            return g11;
-        case (51, 20):
-            return g12;
-    }
-    return "";
-}
-char[][] SetBoardContents(string g1 = "", string g2 = "", string g3 = "", string g4 = "", string g5 = "", string g6 = "", string g7 = "", string g8 = "", string g9 = "", string g10 = "", string g11 = "", string g12 = "")
-{
-    string currentGrid = "";
-    for (int h = 0; h < board.Length; h++)
-    {
-        for (int w = 0; w < width; w++)
-        {
-            currentGrid = GetGrid(w, h, g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12);
-
-            if (currentGrid == "") continue;
-
-            int startW = w;
-            int startH = h;
-
-            int nextW = w + 20;
-
-            for (int x = 0; x < currentGrid.Length; x++, w++)
-            {
-                if (h - startH == 5) continue;
-
-                if (h - startH == 4 && nextW - w == 4)
-                {
-                    currentGrid = "...";
-                    x = 0;
-                }
-
-                if (x < currentGrid.Length - 1 && currentGrid[x] == '#' && currentGrid[x + 1] == 'h')
-                {
-                    h++;
-                    w = startW;
-                    x += 2;
-                }
-                else if (w == nextW)
-                {
-                    h++;
-                    w = startW;
-
-                    if (currentGrid[x] != ' ')
-                    {
-                        board[h][w] = '-';
-                        w++;
-                    }
-                }
-
-                board[h][w] = currentGrid[x];
-            }
-            h = startH;
-            w = nextW - 1;
-
-            currentGrid = "";
-        }
-    }
-
-    return board;
-}
 void SetCurser(string contents, int pos)
 {
     int h = 2;
@@ -1039,6 +1004,43 @@ void SetCurser(string contents, int pos)
     int endContent = 6 + contents.Length > 25 ? 26 : 6 + contents.Length;
 
     board[h][endContent] = '>';
+}
+void SetGrid(string content, int h, int w)
+{
+    int startW = w;
+    int startH = h;
+    int nextW = w + 20;
+
+    for (int x = 0; x < content.Length; x++, w++)
+    {
+        if (h - startH == 5) continue;
+
+        if (h - startH == 4 && nextW - w == 4)
+        {
+            content = "...";
+            x = 0;
+        }
+
+        if (x < content.Length - 1 && content[x] == '#' && content[x + 1] == 'h')
+        {
+            h++;
+            w = startW;
+            x += 2;
+        }
+        else if (w == nextW)
+        {
+            h++;
+            w = startW;
+
+            if (content[x] != ' ')
+            {
+                board[h][w] = '-';
+                w++;
+            }
+        }
+
+        board[h][w] = content[x];
+    }
 }
 void SetBoardDefault()
 {
